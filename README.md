@@ -78,16 +78,4 @@ Crear un sistema de monitoreo geoespacial que permita:
 
 ---
 
-## 📌 Estado del Proyecto
-
-El sistema se encuentra en funcionamiento, con la app móvil publicada en Android y el dashboard accesible desde cualquier navegador. La plataforma ha sido probada en el Parque Natural Metropolitano y está lista para su uso en producción.
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia **MIT**.
-
----
-
 **🌍 EcoTrack — Monitoreo inteligente para la conservación y seguridad en áreas naturales.**
