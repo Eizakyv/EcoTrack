@@ -55,7 +55,7 @@ Su propósito es:
 
 ## 🌱 Impacto ambiental
 
-EcoTrack contribuye directamente a la **conservación** al desincentivar la salida de los senderos, reduciendo la pisoteo de vegetación sensible y la perturbación de la fauna. Además, previene accidentes por proximidad a infraestructura eléctrica, protegiendo tanto a las personas como al ecosistema.
+EcoTrack contribuye directamente a la **conservación** al desincentivar la salida de los senderos, reduciendo el pisoteo de vegetación sensible y la perturbación de la fauna. Además, previene accidentes por proximidad a infraestructura eléctrica, protegiendo tanto a las personas como al ecosistema.
 
 ---
 
