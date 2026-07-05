@@ -1,5 +1,5 @@
 # 🌿 EcoTrack  
-## *Sistema de Monitoreo Geoespacial para Áreas Protegidas*
+### Sistema de Monitoreo Geoespacial para Áreas Protegidas
 
 ---
 
