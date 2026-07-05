@@ -1,56 +1,69 @@
-# 🌿 EcoTrack
-
-**Sistema de monitoreo geoespacial para áreas protegidas**
-
-EcoTrack conecta a los visitantes del Parque Natural Metropolitano con la administración mediante una app móvil (Android) y un panel web en tiempo real. El sistema guía a los usuarios por senderos autorizados, previene el acercamiento a líneas de alta tensión y alerta automáticamente sobre desvíos o zonas de riesgo.
+# 🌿 EcoTrack  
+### *Sistema de Monitoreo Geoespacial para Áreas Protegidas*
 
 ---
 
-## 🎯 Objetivo
+## 🎯 Objetivo del Proyecto
 
-- Guiar a los visitantes dentro de los senderos permitidos.
-- Evitar que se acerquen a las líneas de alta tensión.
-- Supervisar en tiempo real la ubicación y el estado de todos los usuarios.
-- Generar alertas automáticas ante desvíos o peligros.
+EcoTrack es una plataforma que integra tecnología móvil y geoespacial para la **gestión y protección** de áreas naturales.  
+Su propósito es:
 
----
-
-## ✨ Características
-
-### 📱 Aplicación Móvil (Android)
-- Mapa interactivo con posición en vivo.
-- Notificación de estado: **SEGURO**, **ADVERTENCIA** o **PELIGRO**.
-- Seguimiento en primer y segundo plano (servicio foreground).
-- Modo simulación con 6 perfiles de ruta.
-- Visualización de otros usuarios (admin/guard).
-- Switch de seguimiento para centrado automático.
-
-### 🖥️ Panel Web (Dashboard)
-- Métricas en vivo: visitantes, guardaparques, administradores, fuera de sendero y en peligro.
-- Tabla de ocupación de senderos con estado de flujo.
-- Alertas de seguridad clickeables para centrar el mapa en el usuario.
-- Mapa interactivo con capas GeoJSON (senderos, líneas de tensión, límites, etc.).
-- Actualización automática cada 1.5 segundos.
-- Carga de GeoJSON por drag & drop o selección individual.
-
-### 🔐 Seguridad
-- Inicio de sesión con credenciales.
-- Contraseñas encriptadas con SHA‑256.
-- Gestión de roles: **Admin**, **Guard**, **User**.
-- Cierre de sesión seguro.
-- Backup automático de la base de datos (configurable).
+- **Preservar el ecosistema** – Manteniendo a los visitantes dentro de los senderos autorizados, reduciendo el impacto ambiental.
+- **Prevenir accidentes** – Alertando sobre la proximidad a la servidumbre de líneas de alta tensión que cruzan el parque.
+- **Asistir en tiempo real** – Conectando a los visitantes con la administración para una supervisión efectiva.
+- **Fomentar el turismo responsable** – Promoviendo el uso consciente de los espacios protegidos mediante tecnología accesible y confiable.
 
 ---
 
-## 🛠️ Tecnologías
+## 🧩 Componentes del Sistema
 
-- **Aplicación Móvil**: .NET MAUI, C#, XAML.
-- **Panel Web**: HTML5, CSS3, JavaScript, Leaflet.js.
-- **Servidor API**: Python 3, Flask, Flask‑CORS, Shapely, PyProj.
-- **Base de Datos**: PostgreSQL, PostGIS.
-- **Seguridad**: SHA‑256, variables de entorno.
-- **Despliegue**: Render.
+| **Aplicación Móvil** (Android) | **Panel de Control Web** | **Servidor API** |
+|--------------------------------|---------------------------|-------------------|
+| Mapa interactivo con posición en vivo | Dashboard con métricas y alertas | Procesa ubicaciones y calcula distancias |
+| Notificaciones de estado (seguro / advertencia / peligro) | Tabla de ocupación de senderos | Autenticación y gestión de roles |
+| Seguimiento en segundo plano (servicio foreground) | Mapa con capas GeoJSON | Integración con PostgreSQL / PostGIS |
+| Modo simulación con 6 perfiles de ruta | Carga de archivos GeoJSON por drag & drop | Encriptación SHA‑256 |
 
 ---
 
-**🌍 EcoTrack — Monitoreo inteligente para la conservación y seguridad en áreas naturales.**
+## 🔐 Seguridad y Gestión de Acceso
+
+- **Inicio de sesión** con credenciales propias.
+- **Hash de contraseñas** mediante SHA‑256.
+- **Roles diferenciados**:
+  - `Admin` – control total, simulación y gestión.
+  - `Guard` – visualización de mapa y alertas.
+  - `User` – uso exclusivo de la app móvil.
+- **Cierre de sesión** seguro que detiene la transmisión de ubicación.
+- **Backup automático** de la base de datos.
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+| Capa | Tecnologías |
+|------|-------------|
+| **App móvil** | .NET MAUI, C#, XAML |
+| **Dashboard web** | HTML5, CSS3, JavaScript, Leaflet.js |
+| **Servidor API** | Python 3, Flask, Flask‑CORS, Shapely, PyProj |
+| **Base de datos** | PostgreSQL, PostGIS |
+| **Seguridad** | SHA‑256, variables de entorno |
+| **Despliegue** | Render |
+
+---
+
+
+## 🌱 Impacto ambiental
+
+EcoTrack contribuye directamente a la **conservación** al desincentivar la salida de los senderos, reduciendo la pisoteo de vegetación sensible y la perturbación de la fauna. Además, previene accidentes por proximidad a infraestructura eléctrica, protegiendo tanto a las personas como al ecosistema.
+
+---
+
+## 📌 Estado actual
+
+Proyecto funcional y probado en el Parque Natural Metropolitano.  
+App publicada y dashboard accesible desde cualquier navegador.
+
+---
+
+**🧭 EcoTrack – Tecnología al servicio de la naturaleza.**
