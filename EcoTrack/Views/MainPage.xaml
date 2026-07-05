@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EcoTrack.Views.MainPage"
+             Shell.NavBarIsVisible="False"
+             Padding="0"
+             BackgroundColor="#0F172A">
+
+    <!-- Common styles for borders and buttons -->
+    <ContentPage.Resources>
+        <Style x:Key="RoundedBorder" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="White" />
+            <Setter Property="StrokeThickness" Value="2" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+            <Setter Property="Stroke" Value="#D1D5DB" />
+            <Setter Property="Shadow">
+                <Setter.Value>
+                    <Shadow Brush="#00000040" Offset="0,2" Radius="8" Opacity="0.15" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="White" />
+            <Setter Property="TextColor" Value="#1F2937" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="HeightRequest" Value="44" />
+            <Setter Property="BorderColor" Value="#D1D5DB" />
+            <Setter Property="BorderWidth" Value="1.5" />
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuButtonStyle}">
+            <Setter Property="BackgroundColor" Value="#D32F2F" />
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="BorderColor" Value="#D32F2F" />
+        </Style>
+
+        <!-- Estilo estricto anti-modo-oscuro para proteger los RadioButtons en Android -->
+        <Style x:Key="SafeRadioButton" TargetType="RadioButton">
+            <Setter Property="TextColor" Value="#1F2937" />
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VisualStateManager.VisualStateGroups">
+                <VisualStateGroupList>
+                    <VisualStateGroup Name="CommonStates">
+                        <VisualState Name="Normal">
+                            <VisualState.Setters>
+                                <Setter Property="TextColor" Value="#1F2937" />
+                            </VisualState.Setters>
+                        </VisualState>
+                        <VisualState Name="Selected">
+                            <VisualState.Setters>
+                                <Setter Property="TextColor" Value="#10B981" />
+                            </VisualState.Setters>
+                        </VisualState>
+                    </VisualStateGroup>
+                </VisualStateGroupList>
+            </Setter>
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid>
+        <WebView x:Name="EcoMapView" />
+
+        <!-- Permanent notification bar -->
+        <Border x:Name="NotificationBar"
+                Style="{StaticResource RoundedBorder}"
+                Padding="14,12"
+                Margin="12,12,12,0"
+                HorizontalOptions="Fill"
+                VerticalOptions="Start"
+                IsVisible="True">
+            <VerticalStackLayout Spacing="6">
+                <HorizontalStackLayout Spacing="8">
+                    <Label x:Name="NotificationIcon" Text="⏳" FontSize="20" VerticalOptions="Center" />
+                    <Label x:Name="NotificationStatus" 
+                           Text="ESPERANDO..."
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="#1F2937"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <Label x:Name="NotificationMessage" FontSize="14" VerticalOptions="Center">
+                    <Label.FormattedText>
+                        <FormattedString x:Name="NotificationFormattedMessage">
+                            <Span x:Name="NotificationMessageSpan" Text="Esperando ubicación..." TextColor="#4B5563" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+                <Label x:Name="NotificationTrail" 
+                       Text="Sendero: --"
+                       FontSize="14"
+                       TextColor="#4B5563"
+                       VerticalOptions="Center" />
+                <Label x:Name="NotificationTrailDistance" 
+                       Text="Distancia al sendero: -- m"
+                       FontSize="14"
+                       TextColor="#4B5563"
+                       VerticalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Floating menu button -->
+        <Border x:Name="MenuButtonBorder"
+                Style="{StaticResource RoundedBorder}"
+                Stroke="#D1D5DB"
+                StrokeThickness="2"
+                Padding="2"
+                Margin="0,0,20,40"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                IsVisible="True">
+            <Button x:Name="MenuButton"
+                    Text="☰"
+                    FontSize="24"
+                    TextColor="#1F2937"
+                    BackgroundColor="White"
+                    CornerRadius="30"
+                    WidthRequest="56"
+                    HeightRequest="56"
+                    Clicked="OnMenuButtonClicked" />
+        </Border>
+
+        <!-- Main Menu -->
+        <Grid x:Name="MenuOverlay" IsVisible="False" Opacity="0" InputTransparent="False">
+            <Grid BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCloseMenuTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+            <Border x:Name="MenuPanel"
+                    Style="{StaticResource RoundedBorder}"
+                    Padding="24"
+                    Margin="16"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Opacity="0">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Menú" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" TextColor="#1F2937" />
+                    <BoxView HeightRequest="2" Color="#E5E7EB" />
+                    <Button Text="Iniciar sesión" Clicked="OnLoginButtonClicked" Style="{StaticResource MenuButtonStyle}" />
+
+                    <!-- Tracking switch -->
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                        <Label Text="Seguimiento" VerticalOptions="Center" TextColor="#1F2937" FontAttributes="Bold" />
+                        <Switch x:Name="TrackingSwitch" Toggled="OnTrackingToggled" IsToggled="True" />
+                    </HorizontalStackLayout>
+
+                    <Button Text="Cerrar" Clicked="OnCloseMenuClicked" Style="{StaticResource MenuButtonStyle}" BackgroundColor="#E5E7EB" BorderColor="#E5E7EB" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Login / Authenticated Menu -->
+        <Grid x:Name="LoginOverlay" IsVisible="False" Opacity="0" InputTransparent="False">
+            <Grid BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCloseLoginTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+            <Border x:Name="LoginPanel"
+                    Style="{StaticResource RoundedBorder}"
+                    Padding="24"
+                    Margin="16"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Opacity="0">
+                <VerticalStackLayout Spacing="16">
+                    <!-- LOGIN Section -->
+                    <VerticalStackLayout x:Name="LoginSection" Spacing="16">
+                        <Label Text="Iniciar sesión" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" TextColor="#1F2937" />
+                        <BoxView HeightRequest="2" Color="#E5E7EB" />
+
+                        <!-- Email field -->
+                        <Border StrokeThickness="0"
+                                BackgroundColor="#F3F4F6"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="10,0"
+                                HeightRequest="40">
+                            <Entry x:Name="EmailEntry"
+                                   Placeholder="Usuario"
+                                   Keyboard="Email"
+                                   TextColor="#1F2937"
+                                   BackgroundColor="Transparent"
+                                   VerticalOptions="Center" />
+                        </Border>
+
+                        <!-- Password field -->
+                        <Border StrokeThickness="0"
+                                BackgroundColor="#F3F4F6"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="10,0"
+                                HeightRequest="40">
+                            <Entry x:Name="PasswordEntry"
+                                   Placeholder="Contraseña"
+                                   IsPassword="True"
+                                   TextColor="#1F2937"
+                                   BackgroundColor="Transparent"
+                                   VerticalOptions="Center" />
+                        </Border>
+
+                        <Button Text="Iniciar sesión" Clicked="OnLoginSubmitClicked" Style="{StaticResource MenuButtonStyle}" />
+                        <Button Text="Volver" Clicked="OnCloseLoginClicked" Style="{StaticResource MenuButtonStyle}" BackgroundColor="#E5E7EB" BorderColor="#E5E7EB" />
+                    </VerticalStackLayout>
+
+                    <!-- AUTHENTICATED Section -->
+                    <VerticalStackLayout x:Name="AuthenticatedSection" IsVisible="False" Spacing="16">
+                        <Label Text="Bienvenido" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" TextColor="#1F2937" />
+                        <Label x:Name="UserRoleLabel" Text="Rol: user" FontSize="14" TextColor="#4B5563" HorizontalOptions="Center" />
+                        <BoxView HeightRequest="2" Color="#E5E7EB" />
+
+                        <!-- Admin controls (GPS/Simulation and profiles) -->
+                        <VerticalStackLayout x:Name="AdminControls" IsVisible="True" Spacing="8">
+                            <HorizontalStackLayout Spacing="15" HorizontalOptions="Center">
+                                <Label Text="GPS Real" VerticalOptions="Center" TextColor="#1F2937" />
+                                <Switch x:Name="GpsModeSwitch" Toggled="OnGpsModeToggled" />
+                                <Label Text="Simulación" VerticalOptions="Center" TextColor="#1F2937" />
+                            </HorizontalStackLayout>
+
+                            <VerticalStackLayout x:Name="SimulationControls" Spacing="8" IsVisible="False">
+                                <Label Text="Perfil de simulación:" FontAttributes="Bold" TextColor="#1F2937" />
+                                <Button x:Name="ProfileMenuButton"
+                                        Text="Selecciona..."
+                                        BackgroundColor="#F3F4F6"
+                                        TextColor="#1F2937"
+                                        CornerRadius="8"
+                                        BorderColor="#D1D5DB"
+                                        BorderWidth="1.5"
+                                        HeightRequest="40"
+                                        HorizontalOptions="Fill"
+                                        Clicked="OnProfileMenuButtonClicked" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- Common tracking switch -->
+                        <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                            <Label Text="Seguimiento" VerticalOptions="Center" TextColor="#1F2937" FontAttributes="Bold" />
+                            <Switch x:Name="TrackingSwitchLogin" Toggled="OnTrackingToggled" IsToggled="True" />
+                        </HorizontalStackLayout>
+
+                        <Button Text="Cerrar sesión" Clicked="OnLogoutClicked" Style="{StaticResource DangerButtonStyle}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Profile submenu -->
+        <Grid x:Name="ProfileMenuOverlay" 
+              IsVisible="False" 
+              Opacity="0" 
+              InputTransparent="False">
+            <Grid BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCloseProfileMenuTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+            <Border x:Name="ProfileMenuPanel"
+                    Style="{StaticResource RoundedBorder}"
+                    Padding="20"
+                    Margin="30"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="310"
+                    Opacity="0">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Seleccionar perfil" 
+                           FontSize="18" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center" 
+                           TextColor="#1F2937" />
+                    <BoxView HeightRequest="2" Color="#E5E7EB" />
+
+                    <!-- Contenedor del Menú de Perfiles con protección de tema (Forzado a estilos estables) -->
+                    <VerticalStackLayout 
+                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#FFFFFF}"
+                        Padding="16"
+                        Spacing="10">
+
+                        <RadioButton x:Name="ProfileOption1" 
+                        Content="Perfect Trail Walker" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+
+                        <RadioButton x:Name="ProfileOption2" 
+                        Content="Zigzag In/Out Tracker" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        Margin="0,4,0,0" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+
+                        <RadioButton x:Name="ProfileOption3" 
+                        Content="Permanently Lost / Off-Trail" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        Margin="0,4,0,0" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+
+                        <RadioButton x:Name="ProfileOption4" 
+                        Content="High Voltage Risk Walker" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        Margin="0,4,0,0" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+
+                        <RadioButton x:Name="ProfileOption5" 
+                        Content="Within the research zone" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        Margin="0,4,0,0" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+
+                        <RadioButton x:Name="ProfileOption6" 
+                        Content="Outside the park" 
+                        Style="{StaticResource SafeRadioButton}" 
+                        Margin="0,4,0,0" 
+                        TextColor="#000000"
+                        CheckedChanged="OnProfileOptionCheckedChanged" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Cancelar"
+                            Clicked="OnCloseProfileMenuClicked"
+                            Style="{StaticResource MenuButtonStyle}"
+                            BackgroundColor="#E5E7EB"
+                            BorderColor="#E5E7EB" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Error Dialog -->
+        <Grid x:Name="ErrorDialog" IsVisible="False" Opacity="0" InputTransparent="False">
+            <Grid BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnErrorDialogBackgroundTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+            <Border BackgroundColor="White" Padding="24" Margin="40" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 20" StrokeThickness="0" WidthRequest="300">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Error" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" TextColor="#D32F2F" />
+                    <BoxView HeightRequest="2" Color="#E5E7EB" />
+                    <Label x:Name="ErrorMessageLabel" Text="" FontSize="16" HorizontalOptions="Center" HorizontalTextAlignment="Center" TextColor="#1F2937" />
+                    <Button Text="Aceptar" Clicked="OnErrorDialogAcceptClicked" Style="{StaticResource MenuButtonStyle}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Welcome Dialog -->
+        <Grid x:Name="WelcomeDialog" IsVisible="False" Opacity="0" InputTransparent="False">
+            <Grid BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnWelcomeDialogBackgroundTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+            <Border BackgroundColor="White" 
+                    Padding="24" 
+                    Margin="40" 
+                    HorizontalOptions="Center" 
+                    VerticalOptions="Center" 
+                    StrokeShape="RoundRectangle 20" 
+                    StrokeThickness="0" 
+                    WidthRequest="300">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="🎉 Bienvenido" 
+                           FontSize="22" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center" 
+                           TextColor="#22C55E" />
+                    <BoxView HeightRequest="2" Color="#E5E7EB" />
+                    <Label x:Name="WelcomeMessageLabel" 
+                           Text="" 
+                           FontSize="16" 
+                           HorizontalOptions="Center" 
+                           HorizontalTextAlignment="Center" 
+                           TextColor="#1F2937" />
+                    <Button Text="Aceptar" 
+                            Clicked="OnWelcomeDialogAcceptClicked" 
+                            Style="{StaticResource MenuButtonStyle}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

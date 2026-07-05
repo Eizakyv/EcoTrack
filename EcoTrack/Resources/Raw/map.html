@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        html, body, #map {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .leaflet-control-attribution, .leaflet-control-zoom {
+            display: none;
+        }
+
+        .leaflet-tile-pane {
+            will-change: transform;
+        }
+
+        .leaflet-tooltip.trail-label {
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 13px;
+            font-weight: bold;
+            text-shadow: 0 0 4px rgba(0,0,0,0.9);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+            .leaflet-tooltip.trail-label:before {
+                display: none;
+            }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            background: white;
+            color: #1F2937;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            border: 2px solid #D1D5DB;
+            padding: 0;
+        }
+
+        .leaflet-popup-content {
+            font-size: 14px;
+            line-height: 1.5;
+            min-width: 120px;
+            padding: 8px 10px;
+            margin: 0;
+        }
+
+            .leaflet-popup-content strong {
+                font-size: 16px;
+                color: #1F2937;
+            }
+
+        .leaflet-popup-tip {
+            background: white;
+            border: 2px solid #D1D5DB;
+            border-top: none;
+            border-left: none;
+            box-shadow: none;
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            background: white;
+            color: #1F2937;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            border: 2px solid #D1D5DB;
+            padding: 0;
+        }
+
+        .custom-popup .leaflet-popup-content {
+            padding: 8px 12px;
+            margin: 0;
+        }
+
+        .custom-popup .leaflet-popup-tip {
+            background: white;
+            border: 2px solid #D1D5DB;
+            border-top: none;
+            border-left: none;
+            box-shadow: none;
+        }
+
+        /* Pulse animation for the user position marker.
+           We use transform: scale() instead of 'r' because 'r' is an SVG attribute,
+           not a CSS property, and is not valid inside @keyframes. */
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+            transform-origin: center; /* ensures scaling happens from the center */
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+
+            50% {
+                transform: scale(1.8); /* equivalent to radius from 10 to 18 */
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        (function () {
+            try {
+                var map = L.map('map', {
+                    zoomControl: false,
+                    attributionControl: false,
+                    preferCanvas: true,
+                    fadeAnimation: false,
+                    zoomAnimation: false,
+                    markerZoomAnimation: false,
+                    inertia: false
+                }).setView([8.9879, -79.5460], 17);
+
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    minZoom: 10,
+                    attribution: ''
+                }).addTo(map);
+
+                var layers = {};
+                var trailColorMap = {};
+                var colorPalette = [
+                    '#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD',
+                    '#8C564B', '#E377C2', '#7F7F7F', '#BCBD22', '#17BECF',
+                    '#AEC7E8', '#FFBB78', '#98DF8A', '#FF9896', '#C5B0D5',
+                    '#C49C94', '#F7B6D2', '#C7C7C7', '#DBDB8D', '#9EDAE5'
+                ];
+                var colorIndex = 0;
+
+                function getColorForTrailName(name) {
+                    if (!name) name = 'Sin nombre';
+                    if (trailColorMap[name]) return trailColorMap[name];
+                    var color = colorPalette[colorIndex % colorPalette.length];
+                    colorIndex++;
+                    trailColorMap[name] = color;
+                    return color;
+                }
+
+                function getTrailStyle(feature) {
+                    var nombre = feature.properties && feature.properties.NOMBRE ? feature.properties.NOMBRE : 'Sin nombre';
+                    var color = getColorForTrailName(nombre);
+                    return { color: color, weight: 4, opacity: 0.9 };
+                }
+
+                function onEachTrail(feature, layer) {
+                    var nombre = feature.properties && feature.properties.NOMBRE ? feature.properties.NOMBRE : 'Sendero sin nombre';
+                    var color = getColorForTrailName(nombre);
+                    layer.bindTooltip(
+                        '<span style="color:' + color + '; font-weight:bold;">' + nombre + '</span>',
+                        {
+                            permanent: true,
+                            direction: 'center',
+                            className: 'trail-label',
+                            offset: [0, -6]
+                        }
+                    );
+                    layer.on('add', function () {
+                        var tooltip = layer.getTooltip();
+                        if (tooltip) {
+                            var contentNode = tooltip._contentNode;
+                            if (contentNode) {
+                                contentNode.style.color = color;
+                            }
+                        }
+                    });
+                }
+
+                // =========================================================
+                // POIS – NEUTRAL COLORS TO AVOID CONFLICT WITH USER MARKERS
+                // =========================================================
+                function onEachPoi(feature, layer) {
+                    var tipo = feature.properties?.TIPO || 'Punto de interés';
+                    var descrip = feature.properties?.DESCRIP || feature.properties?.DESCRIPCION || '';
+                    var contenido = '<strong>' + tipo + '</strong>';
+                    if (descrip) contenido += '<br><span style="font-size:12px; color:#4B5563;">' + descrip + '</span>';
+                    layer.bindPopup(contenido, { closeButton: false });
+                }
+
+                window.loadLayer = function (layerName, geojsonString) {
+                    try {
+                        var data = JSON.parse(geojsonString);
+                        if (layers[layerName]) map.removeLayer(layers[layerName]);
+                        var options = {};
+                        switch (layerName) {
+                            case 'senderos':
+                                options = { style: getTrailStyle, onEachFeature: onEachTrail, interactive: true, smoothFactor: 1 };
+                                break;
+                            case 'pois':
+                                options = {
+                                    pointToLayer: function (feature, latlng) {
+                                        var color = '#9E9E9E'; // default grey
+                                        if (feature.properties) {
+                                            var tipo = feature.properties.TIPO || '';
+                                            // Use pastel/neutral colours so they don't clash with user states
+                                            if (tipo.includes('Mirador')) color = '#B0BEC5';
+                                            else if (tipo.includes('Picnic')) color = '#BCAAA4';
+                                            else if (tipo.includes('Yacimiento')) color = '#A1887F';
+                                            else if (tipo.includes('Sendero')) color = '#90A4AE';
+                                            else if (tipo.includes('Información')) color = '#80CBC4';
+                                            else if (tipo.includes('Refugio')) color = '#B39DDB';
+                                            else color = '#9E9E9E';
+                                        }
+                                        return L.circleMarker(latlng, {
+                                            radius: 8,
+                                            fillColor: color,
+                                            color: '#FFFFFF',
+                                            weight: 2,
+                                            opacity: 1,
+                                            fillOpacity: 0.9,
+                                            interactive: true
+                                        });
+                                    },
+                                    onEachFeature: onEachPoi,
+                                    interactive: true
+                                };
+                                break;
+                            case 'limites':
+                                options = { style: { color: '#1565C0', weight: 3, opacity: 0.9, fillOpacity: 0, dashArray: '5, 5' }, interactive: false };
+                                break;
+                            case 'lineas_tension':
+                                options = { style: { color: '#D32F2F', weight: 3, opacity: 0.8 }, interactive: false };
+                                break;
+                            case 'parcela':
+                                options = { style: { color: '#FDD835', weight: 2, opacity: 0.8, fillColor: '#FDD835', fillOpacity: 0.25 }, interactive: false };
+                                break;
+                            case 'pluma':
+                                options = { style: { color: '#8E24AA', weight: 2, opacity: 0.7, fillColor: '#8E24AA', fillOpacity: 0.15 }, interactive: false };
+                                break;
+                            default:
+                                options = { style: { color: '#888888', weight: 2, opacity: 0.6 }, interactive: false };
+                        }
+                        var layer = L.geoJSON(data, options);
+                        layer.addTo(map);
+                        layers[layerName] = layer;
+                        if (layerName === 'senderos') {
+                            console.log('Colors assigned to each trail:');
+                            for (var nombre in trailColorMap) console.log('  ' + nombre + ' -> ' + trailColorMap[nombre]);
+                        }
+                    } catch (e) {
+                        console.warn('Error loading layer ' + layerName, e);
+                    }
+                };
+
+                // --- Custom pane for the position circle ---
+                var positionPane = map.createPane('positionPane');
+                positionPane.style.zIndex = 1000;
+                positionPane.style.pointerEvents = 'none';
+
+                // --- Position circle marker ---
+                var positionCircle = L.circleMarker([8.9879, -79.5460], {
+                    radius: 10,
+                    fillColor: '#808080',
+                    color: '#FFFFFF',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8,
+                    className: 'pulse',
+                    pane: 'positionPane',
+                    interactive: false
+                }).addTo(map);
+
+                // =========================================================
+                //  GLOBAL FUNCTIONS
+                // =========================================================
+                window.__map = map;
+
+                window.updatePosition = function (lat, lon) {
+                    var newLatLng = new L.LatLng(lat, lon);
+                    positionCircle.setLatLng(newLatLng);
+                };
+
+                window.updateCircleColor = function (color) {
+                    positionCircle.setStyle({ fillColor: color });
+                };
+
+                window.setMapView = function (lat, lon) {
+                    map.setView([lat, lon], map.getZoom());
+                    console.log('Map centered at ' + lat + ', ' + lon + ' with zoom ' + map.getZoom());
+                };
+
+                // =========================================================
+                // LAYER FOR OTHER USERS (ADMIN/GUARD) – COLOURED BY ROLE
+                // =========================================================
+                var userLayerGroup = L.layerGroup().addTo(map);
+                console.log('✅ userLayerGroup created');
+
+                window.loadUserLocations = function (usersJson) {
+                    console.log('📥 loadUserLocations called with JSON:', usersJson);
+                    userLayerGroup.clearLayers();
+                    try {
+                        var users = JSON.parse(usersJson);
+                        console.log('📊 Users parsed:', users.length);
+                        users.forEach(function (user) {
+                            // --- Fill colour based on role ---
+                            var fillColor = '#808080'; // default grey
+                            if (user.role === 'admin') fillColor = '#3F51B5';  // blue for admin
+                            else if (user.role === 'guard') fillColor = '#9C27B0'; // purple for guard
+
+                            // --- Border colour based on status ---
+                            var borderColor = '#808080';
+                            if (user.status === 'seguro') borderColor = '#22C55E';
+                            else if (user.status === 'advertencia') borderColor = '#F59E0B';
+                            else if (user.status === 'peligro') borderColor = '#EF4444';
+
+                            // --- Create circular marker ---
+                            var circle = L.circleMarker([user.latitude, user.longitude], {
+                                radius: 12,
+                                fillColor: fillColor,
+                                color: borderColor,
+                                weight: 4,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            }).addTo(userLayerGroup);
+
+                            // --- Build popup content (in Spanish for end users) ---
+                            var statusText = user.status.charAt(0).toUpperCase() + user.status.slice(1);
+                            var trailInfo = user.trail_name ? 'Sendero: ' + user.trail_name : '';
+                            var distInfo = user.distance_meters !== null ? 'Distancia al sendero: ' + user.distance_meters.toFixed(2) + ' m' : '';
+                            var roleText = user.role ? 'Rol: ' + user.role : 'Sin sesión';
+
+                            // --- Power line info if in danger ---
+                            var powerLineInfo = '';
+                            if (user.status === 'peligro' && user.power_line_distance !== null && user.power_line_distance !== undefined) {
+                                powerLineInfo = '<br><span style="color:#EF4444;">⚠️ Línea de alta tensión a ' + user.power_line_distance.toFixed(2) + ' m</span>';
+                            }
+
+                            // --- Full popup ---
+                            var popupContent = '<div style="font-family:sans-serif; min-width:150px;">' +
+                                '<strong style="font-size:16px; color:#1F2937;">' + user.display_name + '</strong><br>' +
+                                '<span style="color:#4B5563;">Estado: ' + statusText + '</span><br>' +
+                                '<span style="color:#4B5563;">' + roleText + '</span><br>' +
+                                (trailInfo ? '<span style="color:#4B5563;">' + trailInfo + '</span><br>' : '') +
+                                (distInfo ? '<span style="color:#4B5563;">' + distInfo + '</span><br>' : '') +
+                                powerLineInfo +
+                                '</div>';
+
+                            circle.bindPopup(popupContent, { closeButton: false, className: 'custom-popup' });
+                            console.log('✅ Marker added for', user.display_name, 'role:', user.role, 'status:', user.status);
+                        });
+                        console.log('✅ Users loaded: ' + users.length);
+                    } catch (e) {
+                        console.error('❌ Error loading users:', e);
+                    }
+                };
+
+                console.log('Map loaded successfully');
+            } catch (e) {
+                console.error('Error loading map', e);
+                document.body.innerHTML = '<h1>Error al cargar el mapa</h1>';
+            }
+        })();
+    </script>
+</body>
+</html>
