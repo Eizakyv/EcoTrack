@@ -34,7 +34,7 @@ Su propósito es:
   - `Admin` – control total, simulación y gestión.
   - `Guard` – visualización de mapa y alertas.
   - `User` – uso exclusivo de la app móvil.
-- **Cierre de sesión** seguro que detiene la transmisión de ubicación.
+- **Cierre de sesión** seguro para proteger las cuentas.
 - **Backup automático** de la base de datos.
 
 ---
