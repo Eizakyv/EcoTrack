@@ -59,11 +59,4 @@ EcoTrack contribuye directamente a la **conservación** al desincentivar la sali
 
 ---
 
-## 📌 Estado actual
-
-Proyecto funcional y probado en el Parque Natural Metropolitano.  
-App publicada y dashboard accesible desde cualquier navegador.
-
----
-
 **🧭 EcoTrack – Tecnología al servicio de la naturaleza.**
